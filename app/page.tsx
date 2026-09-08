@@ -1,2 +1,4 @@
-import PrecoMVP from './mvp';
-export default function Home(){return <PrecoMVP/>}
+import FunctionalPrecoApp from './functional-app';
+export default function Home() {
+  return <FunctionalPrecoApp />;
+}
