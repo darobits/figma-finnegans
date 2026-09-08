@@ -32,14 +32,14 @@
   min-width: 0;
 }
 
-.pm-msg.preco > div {
+.pm-msg.pm-role-preco > div {
   flex: 1 1 620px;
   width: calc(100% - 48px) !important;
   min-width: 240px !important;
   max-width: 680px !important;
 }
 
-.pm-msg.user > div {
+.pm-msg.pm-role-user > div {
   flex: 0 1 auto;
   width: fit-content !important;
   min-width: 0 !important;
@@ -55,7 +55,7 @@
   word-break: normal;
 }
 
-.pm-msg.preco p {
+.pm-msg.pm-role-preco p {
   display: block;
   width: 100%;
 }
@@ -207,7 +207,7 @@
     height: 3px;
     border-radius: 0 0 4px 4px;
     background: #318296;
-    content: "";
+    content: '';
   }
 
   .pm-page {
@@ -303,14 +303,14 @@
     border-radius: 9px;
   }
 
-  .pm-msg.preco > div {
+  .pm-msg.pm-role-preco > div {
     flex-basis: auto;
     width: calc(100% - 36px) !important;
     min-width: 0 !important;
     max-width: calc(100% - 36px) !important;
   }
 
-  .pm-msg.user > div {
+  .pm-msg.pm-role-user > div {
     max-width: 88% !important;
   }
 
