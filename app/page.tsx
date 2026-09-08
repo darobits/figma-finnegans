@@ -42,7 +42,7 @@ const FLOW: {key:Screen;label:string}[] = [
   {key:'documents',label:'Documentos'},{key:'estimate',label:'Estimación'},{key:'feedback',label:'Cierre'}
 ];
 
-function Logo(){return <div className="logo"><span><Sparkles/></span><div><b>PRECO</b><small>Presupuesto Companion</small></div></div>}
+function Logo(){return <div className="logo" aria-label="Finnegans PRECO"><span className="finnegans-mark" aria-hidden="true"><svg viewBox="0 0 44 56"><ellipse cx="24" cy="10" rx="20" ry="7"/><ellipse cx="18" cy="29" rx="15" ry="7"/><circle cx="10" cy="47" r="7"/></svg></span><div className="brand-lockup"><b>Finnegans</b><i/><strong>PRECO</strong></div></div>}
 function Status({children}:{children:React.ReactNode}){const s=String(children);return <Badge className={`status ${s.includes('ejecución')?'blue':s.includes('relevamiento')?'amber':s.includes('Estimado')?'violet':s.includes('Finalizado')?'gray':'green'}`}>{children}</Badge>}
 
 function Login({go}:{go:Go}){return <main className="login">
