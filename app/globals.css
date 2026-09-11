@@ -1,17 +1,17 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-/* Finnegans dusk: azul corporativo, superficies cálidas y acentos atardecer. */
+/* Finnegans UI Style Guide v3 — canonical product palette. */
 :root {
-  --background: #e7eff2 !important;
-  --foreground: #1e2c3c !important;
-  --card: #f5f1e8 !important;
-  --primary: #173b6d !important;
-  --border: #d6d9d2 !important;
+  --background: #f7f8fb !important;
+  --foreground: #04102d !important;
+  --card: #ffffff !important;
+  --primary: #057db8 !important;
+  --border: #cdcfd5 !important;
 }
 html body {
-  background: #e7eff2 !important;
-  color: #1e2c3c !important;
+  background: #f7f8fb !important;
+  color: #04102d !important;
 }
 html body .sidebar {
   background: #112d52 !important;
@@ -156,7 +156,7 @@ html body .kpi > span.green {
   --radius-sm: 0.5rem;
   --radius-md: 0.65rem;
   --radius-lg: 0.8rem;
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-roboto);
 }
 :root {
   --background: #edf0ea;
@@ -172,7 +172,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 14px;
 }
 button,
