@@ -1,15 +1,19 @@
 :root {
-  --pc-navy: #143a68;
-  --pc-navy-2: #0f2e52;
-  --pc-teal: #2d778b;
-  --pc-bg: #dfe7e7;
-  --pc-surface: #f1f0e9;
-  --pc-surface-2: #e9eeec;
-  --pc-line: #c6d0cf;
-  --pc-text: #1e3042;
-  --pc-muted: #68798a;
-  --pc-orange: #c8754f;
-  --pc-green: #17745c;
+  --pc-navy: #04102d;
+  --pc-navy-2: #1b2432;
+  --pc-teal: #057db8;
+  --pc-bg: #f7f8fb;
+  --pc-surface: #ffffff;
+  --pc-surface-2: #f7f8fb;
+  --pc-line: #cdcfd5;
+  --pc-line-soft: #e6e7ea;
+  --pc-text: #04102d;
+  --pc-muted: #687081;
+  --pc-primary: #057db8;
+  --pc-primary-hover: #1e8abf;
+  --pc-success: #078759;
+  --pc-warning: #fd9a00;
+  --pc-danger: #dc3131;
 }
 .pc-app,
 .pc-login {
@@ -1756,4 +1760,258 @@
   .pc-factors {
     grid-template-columns: 1fr;
   }
+}
+
+/*
+ * Finnegans product theme.
+ * Blue is reserved for action, selection and progress; dark ink carries the
+ * structure and white surfaces keep PRECO operational instead of promotional.
+ */
+.pc-app,
+.pc-login,
+.pc-content,
+.pc-page {
+  background: var(--pc-bg);
+  color: var(--pc-text);
+}
+
+.pc-login-story {
+  background: var(--pc-navy);
+}
+
+.pc-login-story > div > p,
+.pc-login-story > small {
+  color: #cfd5df;
+}
+
+.pc-ai-mark {
+  border-radius: 8px;
+  background: var(--pc-primary);
+  color: #ffffff;
+}
+
+.pc-login-form,
+.pc-header,
+.pc-conversation > footer {
+  background: #ffffff;
+}
+
+.pc-login-form > div,
+.pc-list-card,
+.pc-card,
+.pc-wizard-card,
+.pc-conversation,
+.pc-project-kpis article,
+.pc-scope-grid article {
+  border-color: var(--pc-line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(4 16 45 / 8%);
+}
+
+.pc-login-form input,
+.pc-form-grid input,
+.pc-form-grid select,
+.pc-list-card header label,
+.pc-conversation textarea {
+  border-color: var(--pc-line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--pc-text);
+}
+
+.pc-login-form input:focus,
+.pc-form-grid input:focus,
+.pc-form-grid select:focus,
+.pc-conversation textarea:focus {
+  border-color: var(--pc-primary);
+  outline: 3px solid rgb(5 125 184 / 14%);
+}
+
+.pc-login-form .button,
+.pc-welcome .button,
+.pc-wizard-card footer .button:last-child,
+.pc-result-total .button:last-child,
+.pc-chat-ready .button,
+.pc-conversation > footer button {
+  border-color: var(--pc-primary);
+  border-radius: 999px;
+  background: var(--pc-primary);
+  color: #ffffff;
+}
+
+.pc-login-form .button:hover,
+.pc-welcome .button:hover,
+.pc-wizard-card footer .button:last-child:hover,
+.pc-result-total .button:last-child:hover,
+.pc-chat-ready .button:hover,
+.pc-conversation > footer button:hover {
+  border-color: var(--pc-primary-hover);
+  background: var(--pc-primary-hover);
+}
+
+.pc-header {
+  border-color: var(--pc-line);
+}
+
+.pc-header nav button,
+.pc-user-menu button {
+  color: var(--pc-muted);
+}
+
+.pc-header nav button.active,
+.pc-header nav button:hover {
+  border-radius: 6px;
+  background: #e6f2f8;
+  color: var(--pc-primary);
+}
+
+.pc-user-menu button:first-child span,
+.pc-avatar,
+.pc-chat-intro > span,
+.pc-message > span,
+.pc-section-heading > span,
+.pc-project-next > span {
+  background: #e6f2f8;
+  color: var(--pc-primary);
+}
+
+.pc-welcome h1,
+.pc-wizard-title h1,
+.pc-result-heading h1,
+.pc-project-heading h1,
+.pc-profile > header h1,
+.pc-card h2,
+.pc-list-card h2,
+.pc-login-form h2 {
+  color: var(--pc-navy);
+}
+
+.pc-welcome p,
+.pc-wizard-title p,
+.pc-result-heading p,
+.pc-project-heading p,
+.pc-profile > header p,
+.pc-card header p,
+.pc-list-card header p {
+  color: var(--pc-muted);
+}
+
+.pc-next-action,
+.pc-result-total {
+  border-color: var(--pc-navy);
+  border-radius: 8px;
+  background: var(--pc-navy);
+  box-shadow: none;
+}
+
+.pc-pipeline article,
+.pc-review-grid article,
+.pc-form-block,
+.pc-chat-brief,
+.pc-chat-ready,
+.pc-factors,
+.pc-audit,
+.pc-project-next {
+  border-color: var(--pc-line);
+  border-radius: 8px;
+  background: #f7f8fb;
+}
+
+.pc-budget-list > button,
+.pc-breakdown article,
+.pc-history > p,
+.pc-stage-list article,
+.pc-evidence-list p {
+  border-color: var(--pc-line-soft);
+}
+
+.pc-budget-list > button:hover,
+.pc-choice:hover,
+.pc-chat-options button:hover {
+  background: #f7f8fb;
+}
+
+.pc-choice,
+.pc-chat-options button,
+.pc-tabs button,
+.pc-back,
+.pc-upload label,
+.pc-review-grid button {
+  border-color: var(--pc-line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--pc-text);
+}
+
+.pc-choice.selected,
+.pc-tabs button.active,
+.pc-stepper .active span {
+  border-color: var(--pc-primary);
+  background: #e6f2f8;
+  color: var(--pc-primary);
+}
+
+.pc-stepper .active,
+.pc-form-block.highlighted {
+  border-color: var(--pc-primary);
+}
+
+.pc-stepper > div:not(:last-child)::after,
+.pc-confidence > div {
+  background: var(--pc-line-soft);
+}
+
+.pc-confidence i {
+  background: var(--pc-primary);
+}
+
+.pc-chat-layout,
+.pc-messages {
+  background: var(--pc-bg);
+}
+
+.pc-message p {
+  border-color: var(--pc-line);
+  background: #ffffff;
+  color: var(--pc-text);
+  box-shadow: none;
+}
+
+.pc-message--user p {
+  border-color: var(--pc-primary);
+  background: var(--pc-primary);
+  color: #ffffff;
+}
+
+.pc-message--warning p {
+  border-color: #ffd89a;
+  background: #fff7e8;
+  color: #6b4500;
+}
+
+.pc-message--summary p,
+.pc-ready-note,
+.pc-success {
+  border-color: #a8d8c7;
+  background: #e9f6f1;
+  color: var(--pc-success);
+}
+
+.pc-status {
+  border-radius: 6px;
+  background: #e9f6f1;
+  color: var(--pc-success);
+}
+
+.pc-mobile-nav {
+  border-color: var(--pc-line);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 -8px 24px rgb(4 16 45 / 8%);
+}
+
+.pc-mobile-nav button.active {
+  border-radius: 6px;
+  background: #e6f2f8;
+  color: var(--pc-primary);
 }
