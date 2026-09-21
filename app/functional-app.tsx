@@ -6,19 +6,22 @@ import {
   BarChart3,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   FileText,
   FolderKanban,
-  LogOut,
   MessageSquareText,
+  Moon,
   Paperclip,
   Plus,
+  RotateCcw,
   Search,
   Send,
   ShieldCheck,
   Sparkles,
+  Sun,
+  Trash2,
   UploadCloud,
-  UserRound,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import './functional.css';
 
-type Screen = 'home' | 'wizard' | 'chat' | 'result' | 'project' | 'profile';
+type Screen = 'home' | 'wizard' | 'chat' | 'result' | 'project' | 'trash';
 type Service = 'STAR' | 'ODC' | 'IMAS';
 type Budget = {
   id: number;
@@ -63,6 +66,10 @@ type ChatMessage = {
   role: 'user' | 'preco';
   text: string;
   tone?: 'warning' | 'summary';
+};
+type DeletedBudget = {
+  budget: Budget;
+  deletedAt: number;
 };
 const modules = [
   'Compras',
@@ -121,7 +128,7 @@ const initial: Budget[] = [
     complexity: 'Media',
     background: 'Experiencia estándar',
     document: 'Alcance Tesorería.xlsx',
-    status: 'En ejecución',
+    status: 'Confirmado',
     estimate: 128,
     answers: [],
   },
@@ -181,67 +188,23 @@ function Brand({ dark = false }: { dark?: boolean }) {
     </div>
   );
 }
-function Login({ enter }: { enter: () => void }) {
-  const [email, setEmail] = useState('lucia.martinez@finnegans.com');
-  const [pass, setPass] = useState('preco2026');
-  return (
-    <main className="pc-login">
-      <section className="pc-login-story">
-        <Brand dark />
-        <div>
-          <span className="pc-ai-mark">
-            <Sparkles />
-          </span>
-          <h1>Presupuesto Companion</h1>
-          <p>Tu asistente para estimar horas de implementación.</p>
-        </div>
-        <small>Uso interno de Finnegans</small>
-      </section>
-      <section className="pc-login-form">
-        <div>
-          <div className="pc-login-logo">
-            <Brand />
-          </div>
-          <h2>Iniciar sesión</h2>
-          <p>Bienvenido a PRECO.</p>
-          <label>
-            Correo corporativo
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
-          </label>
-          <label>
-            Contraseña
-            <Input
-              type="password"
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
-            />
-          </label>
-          <Button onClick={enter} disabled={!email.trim() || !pass.trim()}>
-            Ingresar a PRECO
-            <ArrowRight />
-          </Button>
-          <span>
-            <ShieldCheck />
-            Acceso de demostración
-          </span>
-        </div>
-      </section>
-    </main>
-  );
-}
 function Shell({
   screen,
   go,
-  logout,
+  trashCount,
+  dark,
+  toggleTheme,
   children,
 }: {
   screen: Screen;
   go: (s: Screen) => void;
-  logout: () => void;
+  trashCount: number;
+  dark: boolean;
+  toggleTheme: () => void;
   children: React.ReactNode;
 }) {
   return (
-    <main className="pc-app">
+    <main className={`pc-app ${dark ? 'pc-dark' : ''}`}>
       <header className="pc-header">
         <button className="pc-logo-button" onClick={() => go('home')}>
           <Brand />
@@ -265,15 +228,31 @@ function Shell({
             <Plus />
             Nuevo presupuesto
           </button>
+          <button
+            className={screen === 'trash' ? 'active' : ''}
+            onClick={() => go('trash')}
+          >
+            <Trash2 />
+            Papelera
+            {trashCount > 0 && <b>{trashCount}</b>}
+          </button>
         </nav>
         <div className="pc-user-menu">
-          <button onClick={() => go('profile')}>
+          <button
+            className="pc-theme-toggle"
+            onClick={toggleTheme}
+            aria-label={dark ? 'Activar modo claro' : 'Activar modo oscuro'}
+            title={dark ? 'Activar modo claro' : 'Activar modo oscuro'}
+          >
+            {dark ? <Sun /> : <Moon />}
+          </button>
+          <div className="pc-session-user">
             <span>LM</span>
-            <b>Lucía Martínez</b>
-          </button>
-          <button aria-label="Cerrar sesión" onClick={logout}>
-            <LogOut />
-          </button>
+            <p>
+              <b>Lucía Martínez</b>
+              <small>Presupuestadora</small>
+            </p>
+          </div>
         </div>
       </header>
       <div className="pc-content">{children}</div>
@@ -295,11 +274,11 @@ function Shell({
           <span>Nuevo</span>
         </button>
         <button
-          className={screen === 'profile' ? 'active' : ''}
-          onClick={() => go('profile')}
+          className={screen === 'trash' ? 'active' : ''}
+          onClick={() => go('trash')}
         >
-          <UserRound />
-          <span>Perfil</span>
+          <Trash2 />
+          <span>Papelera</span>
         </button>
       </nav>
     </main>
@@ -309,16 +288,23 @@ function Home({
   budgets,
   open,
   create,
+  remove,
 }: {
   budgets: Budget[];
   open: (b: Budget) => void;
   create: () => void;
+  remove: (b: Budget) => void;
 }) {
   const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<'all' | 'drafts' | 'recent'>('all');
   const rows = budgets.filter(
     (b) =>
-      b.client.toLowerCase().includes(q.toLowerCase()) ||
-      b.modules.join(' ').toLowerCase().includes(q.toLowerCase()),
+      (b.client.toLowerCase().includes(q.toLowerCase()) ||
+        b.modules.join(' ').toLowerCase().includes(q.toLowerCase())) &&
+      (filter === 'all' ||
+        (filter === 'drafts' &&
+          ['Borrador', 'En relevamiento'].includes(b.status)) ||
+        (filter === 'recent' && b.status !== 'Borrador')),
   );
   return (
     <div className="pc-page pc-home">
@@ -326,7 +312,7 @@ function Home({
         <div>
           <small>PRESUPUESTACIÓN INTERNA</small>
           <h1>Buen día, Lucía</h1>
-          <p>Tenés presupuestos que necesitan una acción.</p>
+          <p>Creá una estimación o retomá una conversación reciente.</p>
         </div>
         <Button onClick={create}>
           <Plus />
@@ -350,57 +336,99 @@ function Home({
           <ArrowRight />
         </Button>
       </section>
-      <section className="pc-pipeline">
-        {['Borrador', 'En relevamiento', 'Estimado', 'En ejecución'].map(
-          (label) => (
-            <article key={label}>
-              <strong>
-                {budgets.filter((b) => b.status === label).length}
-              </strong>
-              <span>{label}</span>
-            </article>
-          ),
-        )}
+      <section className="pc-home-filters" aria-label="Filtrar presupuestos">
+        <button
+          className={filter === 'all' ? 'active' : ''}
+          onClick={() => setFilter('all')}
+        >
+          Todos <b>{budgets.length}</b>
+        </button>
+        <button
+          className={filter === 'drafts' ? 'active' : ''}
+          onClick={() => setFilter('drafts')}
+        >
+          Borradores{' '}
+          <b>
+            {
+              budgets.filter((b) =>
+                ['Borrador', 'En relevamiento'].includes(b.status),
+              ).length
+            }
+          </b>
+        </button>
+        <button
+          className={filter === 'recent' ? 'active' : ''}
+          onClick={() => setFilter('recent')}
+        >
+          Recientes{' '}
+          <b>{budgets.filter((b) => b.status !== 'Borrador').length}</b>
+        </button>
       </section>
       <section className="pc-list-card">
         <header>
           <div>
-            <h2>Mis presupuestos</h2>
-            <p>Abrí un proyecto para ver la acción que corresponde.</p>
+            <h2>Chats de presupuesto</h2>
+            <p>Cada conversación conserva su contexto y sus respuestas.</p>
           </div>
-          <label>
+          <div className="pc-search-box">
             <Search />
             <Input
+              aria-label="Buscar cliente o módulo"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar cliente o módulo"
             />
-          </label>
+          </div>
         </header>
         <div className="pc-budget-list">
           {rows.map((b) => (
-            <button key={b.id} onClick={() => open(b)}>
-              <span className="pc-avatar">
-                {b.client
-                  .split(' ')
-                  .map((x) => x[0])
-                  .join('')
-                  .slice(0, 2)}
-              </span>
-              <span className="pc-budget-name">
-                <b>{b.client}</b>
-                <small>
-                  PR-{b.id} · {b.service} · {b.modules.join(', ')}
-                </small>
-              </span>
-              <span className="pc-status">{b.status}</span>
-              <span className="pc-budget-hours">
-                <b>{b.estimate ? `${b.estimate} h` : 'Pendiente'}</b>
-                <small>Estimación</small>
-              </span>
-              <ChevronRight />
-            </button>
+            <article key={b.id}>
+              <button className="pc-budget-open" onClick={() => open(b)}>
+                <span className="pc-avatar">
+                  {b.client
+                    .split(' ')
+                    .map((x) => x[0])
+                    .join('')
+                    .slice(0, 2)}
+                </span>
+                <span className="pc-budget-name">
+                  <b>Presupuesto · {b.client}</b>
+                  <small>
+                    PR-{b.id} · {b.service} ·{' '}
+                    {b.modules.join(', ') || 'Alcance por definir'}
+                  </small>
+                </span>
+                <span className="pc-status">{b.status}</span>
+                <span className="pc-budget-hours">
+                  <b>{b.estimate ? `${b.estimate} SPU` : 'Pendiente'}</b>
+                  <small>Estimación</small>
+                </span>
+                <span
+                  className={`pc-budget-destination ${
+                    b.estimate ? 'dashboard' : 'conversation'
+                  }`}
+                >
+                  {b.estimate ? <BarChart3 /> : <MessageSquareText />}
+                  {b.estimate ? 'Ver dashboard' : 'Continuar chat'}
+                  <ChevronRight />
+                </span>
+              </button>
+              <button
+                className="pc-budget-delete"
+                aria-label={`Enviar Presupuesto ${b.client} a la papelera`}
+                onClick={() => remove(b)}
+              >
+                <Trash2 />
+              </button>
+            </article>
           ))}
+          {rows.length === 0 && (
+            <div className="pc-list-empty">
+              <Search />
+              <b>No encontramos presupuestos</b>
+              <span>Probá con otro término o elegí otro filtro.</span>
+            </div>
+          )}
         </div>
       </section>
     </div>
@@ -438,12 +466,10 @@ function Wizard({
   cancel: () => void;
 }) {
   const [step, setStep] = useState(1);
-  const valid1 = !!draft.client.trim() && !!draft.owner.trim();
+  const valid1 = !!draft.client.trim();
   const valid2 =
     draft.modules.length > 0 &&
-    (draft.model === 'Small' ||
-      !draft.modules.includes('Compras') ||
-      draft.purchaseVariants.length > 0);
+    (!draft.modules.includes('Compras') || draft.purchaseVariants.length > 0);
   const toggle = (
     key: 'modules' | 'purchaseVariants' | 'environments',
     value: string,
@@ -496,9 +522,10 @@ function Wizard({
               </div>
             </div>
             <div className="pc-form-grid">
-              <label className="wide">
+              <label className="wide" htmlFor="budget-client">
                 Cliente o proyecto
                 <Input
+                  id="budget-client"
                   value={draft.client}
                   onChange={(e) =>
                     setDraft({ ...draft, client: e.target.value })
@@ -536,25 +563,6 @@ function Wizard({
                 </select>
               </label>
               <label>
-                Modelo de alcance
-                <select
-                  value={draft.model}
-                  onChange={(e) =>
-                    setDraft({
-                      ...draft,
-                      model: e.target.value as 'FULL' | 'Small',
-                      purchaseVariants: [],
-                    })
-                  }
-                >
-                  <option>FULL</option>
-                  <option>Small</option>
-                </select>
-                <small>
-                  FULL detalla variantes; Small usa módulos agrupados.
-                </small>
-              </label>
-              <label>
                 Tipo de negocio
                 <select
                   value={draft.industry}
@@ -569,15 +577,6 @@ function Wizard({
                   <option>Logística</option>
                   <option>Salud</option>
                 </select>
-              </label>
-              <label className="wide">
-                Responsable
-                <Input
-                  value={draft.owner}
-                  onChange={(e) =>
-                    setDraft({ ...draft, owner: e.target.value })
-                  }
-                />
               </label>
             </div>
           </>
@@ -595,7 +594,7 @@ function Wizard({
               </div>
             </div>
             <div className="pc-form-block">
-              <label>Módulos o procesos</label>
+              <div className="pc-field-label">Módulos o procesos</div>
               <div className="pc-choice-grid">
                 {modules.map((x) => (
                   <Choice
@@ -608,9 +607,11 @@ function Wizard({
                 ))}
               </div>
             </div>
-            {draft.model === 'FULL' && draft.modules.includes('Compras') && (
+            {draft.modules.includes('Compras') && (
               <div className="pc-form-block highlighted">
-                <label>¿Qué variantes de Compras incluye?</label>
+                <div className="pc-field-label">
+                  ¿Qué variantes de Compras incluye?
+                </div>
                 <p>
                   Esta separación evita comparar proyectos con alcances
                   diferentes.
@@ -629,9 +630,10 @@ function Wizard({
               </div>
             )}
             <div className="pc-form-grid compact">
-              <label>
+              <label htmlFor="budget-users">
                 Usuarios previstos
                 <Input
+                  id="budget-users"
                   type="number"
                   min="0"
                   value={draft.users}
@@ -644,9 +646,10 @@ function Wizard({
                   sabés.
                 </small>
               </label>
-              <label>
+              <label htmlFor="budget-companies">
                 Empresas o razones sociales
                 <Input
+                  id="budget-companies"
                   type="number"
                   min="0"
                   value={draft.companies}
@@ -658,34 +661,6 @@ function Wizard({
                   Empresas que trabajarán en el sistema. Ingresá 0 si está por
                   definir.
                 </small>
-              </label>
-              <label>
-                Volumen mensual aproximado
-                <Input
-                  type="number"
-                  min="0"
-                  value={draft.volume}
-                  onChange={(e) =>
-                    setDraft({ ...draft, volume: Number(e.target.value) })
-                  }
-                />
-                <small>
-                  Ejemplo: órdenes, facturas o pagos por mes. Puede quedar en 0
-                  si no se conoce.
-                </small>
-              </label>
-              <label>
-                Infraestructura
-                <select
-                  value={draft.infrastructure}
-                  onChange={(e) =>
-                    setDraft({ ...draft, infrastructure: e.target.value })
-                  }
-                >
-                  <option>Amazon</option>
-                  <option>Servidor propio</option>
-                  <option>Híbrida</option>
-                </select>
               </label>
               <label>
                 Complejidad inicial
@@ -714,31 +689,6 @@ function Wizard({
                 </select>
               </label>
             </div>
-            <div className="pc-form-block">
-              <label>Ambientes necesarios</label>
-              <p>
-                Elegí dónde se preparará, probará y utilizará el sistema. Si no
-                lo sabés, dejalos sin seleccionar y PRECO lo preguntará.
-              </p>
-              <div className="pc-choice-grid environments">
-                {[
-                  ['DESA', 'Preparación y configuración'],
-                  ['QA', 'Pruebas antes de publicar'],
-                  ['PROD', 'Sistema de uso real'],
-                ].map(([x, detail]) => (
-                  <Choice
-                    key={x}
-                    selected={draft.environments.includes(x)}
-                    onClick={() => toggle('environments', x)}
-                  >
-                    <span className="pc-environment-option">
-                      <b>{x}</b>
-                      <small>{detail}</small>
-                    </span>
-                  </Choice>
-                ))}
-              </div>
-            </div>
           </>
         )}
         {step === 3 && (
@@ -755,7 +705,7 @@ function Wizard({
                 <small>CLIENTE Y SERVICIO</small>
                 <b>{draft.client}</b>
                 <p>
-                  {draft.service} · {draft.product} · {draft.model}
+                  {draft.service} · {draft.product} · {draft.industry}
                 </p>
                 <button onClick={() => setStep(1)}>Editar</button>
               </article>
@@ -781,13 +731,7 @@ function Wizard({
                     : 'Empresas por definir'}
                 </b>
                 <p>
-                  {draft.environments.length
-                    ? draft.environments.join(' · ')
-                    : 'Ambientes por definir'}{' '}
-                  ·{' '}
-                  {draft.volume
-                    ? `${draft.volume.toLocaleString('es-AR')} operaciones mensuales`
-                    : 'Volumen por definir'}
+                  {draft.complexity} · {draft.background}
                 </p>
                 <button onClick={() => setStep(2)}>Editar</button>
               </article>
@@ -865,21 +809,6 @@ function buildQuestions(b: Budget) {
         'Todavía no se sabe',
       ],
     });
-  if (!b.volume)
-    q.push({
-      text: '¿Qué volumen mensual aproximado tendrá el proceso principal?',
-      options: [
-        'Hasta 500 operaciones',
-        'Entre 501 y 2.000',
-        'Más de 2.000',
-        'No se conoce',
-      ],
-    });
-  if (!b.environments.length)
-    q.push({
-      text: '¿En qué ambientes deberá prepararse y utilizarse la solución?',
-      options: ['QA y PROD', 'DESA, QA y PROD', 'Solo PROD', 'A definir'],
-    });
   if (b.purchaseVariants.includes('Compras del exterior'))
     q.push({
       text: 'Veo que el alcance incluye Compras del exterior. ¿Cómo se resolverá la interacción con organismos, despachantes o sistemas externos?',
@@ -952,7 +881,7 @@ function Chat({
       id: 1,
       role: 'preco',
       tone: 'summary',
-      text: `Ya tengo el contexto inicial de ${budget.client}: ${budget.service}, modelo ${budget.model} y ${budget.modules.join(', ')}. Voy a completar contigo los datos que todavía faltan y que pueden cambiar la estimación.`,
+      text: `Ya tengo el contexto inicial de ${budget.client}: ${budget.service}, ${budget.industry} y ${budget.modules.join(', ')}. Voy a completar contigo los datos que todavía faltan y que pueden cambiar la estimación.`,
     },
   ];
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -973,6 +902,7 @@ function Chat({
   });
   const complete = index >= questions.length;
   const messagesRef = useRef<HTMLDivElement>(null);
+  const messageIdRef = useRef(1000);
   useEffect(() => {
     const container = messagesRef.current;
     if (container) container.scrollTop = container.scrollHeight;
@@ -986,18 +916,18 @@ function Chat({
     if (!v.trim() || complete) return;
     const answers = [...budget.answers, v.trim()];
     const next = index + 1;
-    const add: ChatMessage[] = [
-      { id: Date.now(), role: 'user', text: v.trim() },
-    ];
+    const baseId = messageIdRef.current;
+    messageIdRef.current += 2;
+    const add: ChatMessage[] = [{ id: baseId, role: 'user', text: v.trim() }];
     if (next < questions.length)
       add.push({
-        id: Date.now() + 1,
+        id: baseId + 1,
         role: 'preco',
         text: questions[next].text,
       });
     else
       add.push({
-        id: Date.now() + 1,
+        id: baseId + 1,
         role: 'preco',
         tone: risk ? 'warning' : 'summary',
         text: risk
@@ -1039,16 +969,13 @@ function Chat({
           <h2>Lo que PRECO ya sabe</h2>
           {[
             ['Servicio', budget.service],
-            ['Modelo', budget.model],
+            ['Negocio', budget.industry],
             ['Módulos', budget.modules.join(', ')],
             [
               'Escala',
               `${budget.users || 'Por definir'} usuarios · ${budget.companies || 'Por definir'} empresas`,
             ],
-            [
-              'Infraestructura',
-              `${budget.infrastructure} · ${budget.environments.join(' / ')}`,
-            ],
+            ['Complejidad', budget.complexity],
           ].map(([a, b]) => (
             <p key={a}>
               <span>{a}</span>
@@ -1168,17 +1095,15 @@ function calculate(b: Budget) {
     Impuestos: 38,
   };
   let technical = b.modules.reduce((s, m) => s + (bases[m] || 30), 0);
-  if (b.model === 'FULL' && b.modules.includes('Compras'))
+  if (b.modules.includes('Compras'))
     technical += Math.max(0, b.purchaseVariants.length - 1) * 6;
   technical *= b.users > 200 ? 1.24 : b.users > 50 ? 1.1 : 1;
-  technical +=
-    Math.max(0, b.companies - 1) * 4 +
-    Math.max(0, b.environments.length - 1) * 3;
+  technical += Math.max(0, b.companies - 1) * 4;
   technical *=
     b.complexity === 'Alta' ? 1.25 : b.complexity === 'Media' ? 1.12 : 1;
   technical = Math.round(technical);
-  const management = Math.round(technical * 0.12),
-    uat = Math.round(technical * 0.1),
+  const management = Math.round(technical * 0.18),
+    uat = Math.round(technical * 0.2),
     reserve = b.answers.some((x) =>
       /desarrollo|a definir|proveedor|reglas por sociedad/i.test(x),
     )
@@ -1204,8 +1129,8 @@ function Result({
   const c = calculate(budget);
   const rows = [
     ['Trabajo técnico', c.technical, 'Ítems, escala, empresas y complejidad'],
-    ['Gestión', c.management, '12% sobre el esfuerzo técnico'],
-    ['UAT', c.uat, '10% para validación de usuario'],
+    ['Gestión', c.management, '18% sobre el esfuerzo técnico'],
+    ['UAT', c.uat, '20% para validación de usuario'],
     [
       'Reserva preventiva',
       c.reserve,
@@ -1230,10 +1155,10 @@ function Result({
       </header>
       <section className="pc-result-total">
         <div>
-          <small>HORAS PRESUPUESTADAS</small>
+          <small>SPU ESTIMADOS</small>
           <strong>
             {c.total}
-            <span> h</span>
+            <span> SPU</span>
           </strong>
           <p>Esfuerzo técnico más gestión, UAT y reserva aplicable</p>
         </div>
@@ -1265,7 +1190,7 @@ function Result({
                     <b>{l as string}</b>
                     <small>{d as string}</small>
                   </span>
-                  <strong>{h as number} h</strong>
+                  <strong>{h as number} SPU</strong>
                 </article>
               ))}
             </div>
@@ -1283,7 +1208,7 @@ function Result({
                   'Multiempresa',
                 ],
                 [budget.complexity, 'Complejidad'],
-                [`${budget.environments.length} ambientes`, 'Infraestructura'],
+                [budget.service, 'Tipo de servicio'],
               ].map(([v, l]) => (
                 <p key={l}>
                   <span>{l}</span>
@@ -1312,9 +1237,9 @@ function Result({
               <p>Casos del snapshot que pasaron controles de calidad.</p>
             </header>
             {[
-              ['Caso histórico 1042', 'STAR · FULL', '+9%'],
-              ['Caso histórico 2318', 'STAR · FULL', '+13%'],
-              ['Caso histórico 5077', 'ODC · Small', '+4%'],
+              ['Caso histórico 1042', 'STAR · Compras', '+9%'],
+              ['Caso histórico 2318', 'STAR · Compras', '+13%'],
+              ['Caso histórico 5077', 'ODC · Tesorería', '+4%'],
             ].map((x) => (
               <p key={x[0]}>
                 <span>
@@ -1351,7 +1276,80 @@ function Project({
   const [tab, setTab] = useState<'summary' | 'plan' | 'scope' | 'evidence'>(
     'summary',
   );
+  const [openStage, setOpenStage] = useState('02');
   const hours = budget.estimate || calculate(budget).total;
+  const stages = [
+    {
+      id: '01',
+      name: 'Gestión del proyecto',
+      spu: 12,
+      items: [
+        ['Kickoff y planificación', 3],
+        ['Seguimiento y coordinación', 6],
+        ['Cierre y documentación', 3],
+      ],
+    },
+    {
+      id: '02',
+      name: 'Diseño de procesos',
+      spu: 24,
+      items: [
+        ['Relevamiento funcional', 8],
+        ['Diseño del proceso objetivo', 10],
+        ['Validación con referentes', 6],
+      ],
+    },
+    {
+      id: '03',
+      name: 'Configuración y setup',
+      spu: 32,
+      items: [
+        ['Parametrización base', 14],
+        ['Datos maestros e inicialización', 10],
+        ['Validación de configuración', 8],
+      ],
+    },
+    {
+      id: '04',
+      name: 'Desarrollos',
+      spu: 16,
+      items: [
+        ['Diseño técnico', 4],
+        ['Construcción o adaptación', 8],
+        ['Pruebas técnicas', 4],
+      ],
+    },
+    {
+      id: '05',
+      name: 'Capacitación',
+      spu: 8,
+      items: [
+        ['Preparación de materiales', 2],
+        ['Capacitación a usuarios clave', 4],
+        ['Acompañamiento inicial', 2],
+      ],
+    },
+    {
+      id: '06',
+      name: 'UAT',
+      spu: 10,
+      items: [
+        ['Preparación de escenarios', 3],
+        ['Ejecución y soporte de pruebas', 5],
+        ['Correcciones y conformidad', 2],
+      ],
+    },
+    {
+      id: '07',
+      name: 'PEM y estabilización',
+      spu: 6,
+      items: [
+        ['Puesta en marcha', 2],
+        ['Monitoreo inicial', 2],
+        ['Estabilización y cierre', 2],
+      ],
+    },
+  ];
   return (
     <div className="pc-page pc-project">
       <button className="pc-back" onClick={goHome}>
@@ -1371,7 +1369,7 @@ function Project({
       <nav className="pc-tabs">
         {[
           ['summary', 'Resumen'],
-          ['plan', 'Plan y horas'],
+          ['plan', 'Desglose'],
           ['scope', 'Alcance'],
           ['evidence', 'Evidencia'],
         ].map(([id, label]) => (
@@ -1389,13 +1387,13 @@ function Project({
           <section className="pc-project-kpis">
             <article>
               <small>PRESUPUESTO</small>
-              <strong>{hours} h</strong>
+              <strong>{hours} SPU</strong>
               <p>Versión confirmada</p>
             </article>
             <article>
               <small>EJECUTADO</small>
               <strong>
-                {budget.status === 'En ejecución' ? '46 h' : '0 h'}
+                {budget.status === 'En ejecución' ? '46 SPU' : '0 SPU'}
               </strong>
               <p>Horas registradas</p>
             </article>
@@ -1423,8 +1421,9 @@ function Project({
               </p>
             </div>
             {!budget.estimate && (
-              <Button onClick={talk}>
-                Continuar con PRECO
+              <Button className="pc-continue-preco" onClick={talk}>
+                <Sparkles />
+                <span>Continuar con PRECO</span>
                 <ArrowRight />
               </Button>
             )}
@@ -1436,36 +1435,57 @@ function Project({
           <header>
             <h2>Plan estándar de implementación</h2>
             <p>
-              Las horas se organizan en las siete etapas definidas por
-              Finnegans.
+              Los SPU se organizan en las siete etapas definidas por Finnegans.
             </p>
           </header>
           <div className="pc-stage-list">
-            {[
-              ['01', 'Gestión del proyecto', 12],
-              ['02', 'Diseño de procesos', 24],
-              ['03', 'Configuración y setup', 32],
-              ['04', 'Desarrollos', 16],
-              ['05', 'Capacitación', 8],
-              ['06', 'UAT', 10],
-              ['07', 'PEM y estabilización', 6],
-            ].map(([n, name, h], i) => (
-              <article key={n as string}>
-                <span>{n as string}</span>
-                <b>{name as string}</b>
-                <div>
-                  <i
-                    style={{
-                      width:
-                        i < 2 && budget.status === 'En ejecución'
-                          ? '75%'
-                          : '0%',
-                    }}
-                  />
-                </div>
-                <strong>{h as number} h</strong>
-              </article>
-            ))}
+            {stages.map((stage, i) => {
+              const expanded = openStage === stage.id;
+              return (
+                <article key={stage.id} className={expanded ? 'expanded' : ''}>
+                  <button
+                    className="pc-stage-summary"
+                    onClick={() => setOpenStage(expanded ? '' : stage.id)}
+                    aria-expanded={expanded}
+                  >
+                    <span className="pc-stage-number">{stage.id}</span>
+                    <span className="pc-stage-title">
+                      <b>{stage.name}</b>
+                      <small>{stage.items.length} componentes</small>
+                    </span>
+                    <span className="pc-stage-track">
+                      <i
+                        style={{
+                          width:
+                            i < 2 && budget.status === 'En ejecución'
+                              ? '75%'
+                              : '0%',
+                        }}
+                      />
+                    </span>
+                    <strong>{stage.spu} SPU</strong>
+                    <ChevronDown className="pc-stage-chevron" />
+                  </button>
+                  {expanded && (
+                    <div className="pc-stage-detail">
+                      <p>
+                        <span>Componente</span>
+                        <span>Esfuerzo</span>
+                      </p>
+                      {stage.items.map(([name, spu]) => (
+                        <p key={name}>
+                          <span>
+                            <CheckCircle2 />
+                            {name}
+                          </span>
+                          <b>{spu} SPU</b>
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       )}
@@ -1478,12 +1498,11 @@ function Project({
           <div className="pc-scope-grid">
             {[
               ['Servicio', budget.service],
-              ['Modelo', budget.model],
+              ['Negocio', budget.industry],
               ['Producto', budget.product],
               ['Módulos', budget.modules.join(', ')],
               ['Licencias', String(budget.users)],
               ['Sociedades', String(budget.companies)],
-              ['Ambientes', budget.environments.join(' · ')],
               ['Complejidad', budget.complexity],
             ].map(([l, v]) => (
               <article key={l}>
@@ -1543,61 +1562,120 @@ function Project({
     </div>
   );
 }
-function Profile() {
-  const [saved, setSaved] = useState(false);
+function Trash({
+  deleted,
+  restore,
+  back,
+}: {
+  deleted: DeletedBudget[];
+  restore: (item: DeletedBudget) => void;
+  back: () => void;
+}) {
+  const [selected, setSelected] = useState<DeletedBudget | null>(null);
+  const [now] = useState(() => Date.now());
+  const daysLeft = (deletedAt: number) => {
+    const elapsed = Math.floor((now - deletedAt) / 86_400_000);
+    return Math.max(1, 7 - elapsed);
+  };
   return (
-    <div className="pc-page pc-profile">
-      <header>
-        <small>CUENTA</small>
-        <h1>Mi perfil</h1>
-        <p>Información visible dentro del equipo de presupuestación.</p>
+    <div className="pc-page pc-trash-page">
+      <button className="pc-back" onClick={back}>
+        <ArrowLeft />
+        Volver a presupuestos
+      </button>
+      <header className="pc-trash-heading">
+        <div>
+          <small>PAPELERA</small>
+          <h1>Presupuestos eliminados</h1>
+          <p>
+            Podés restaurarlos durante siete días antes de su eliminación
+            definitiva.
+          </p>
+        </div>
       </header>
-      {saved && (
-        <div className="pc-success">
-          <Check />
-          Perfil actualizado
-        </div>
+      {deleted.length > 0 ? (
+        <section className="pc-trash-list">
+          {deleted.map((item) => (
+            <article key={item.budget.id}>
+              <span className="pc-avatar">
+                {item.budget.client
+                  .split(' ')
+                  .map((x) => x[0])
+                  .join('')
+                  .slice(0, 2)}
+              </span>
+              <span>
+                <b>Presupuesto · {item.budget.client}</b>
+                <small>
+                  PR-{item.budget.id} · Se elimina en {daysLeft(item.deletedAt)}{' '}
+                  días
+                </small>
+              </span>
+              <Button variant="outline" onClick={() => setSelected(item)}>
+                <RotateCcw />
+                Restaurar
+              </Button>
+            </article>
+          ))}
+        </section>
+      ) : (
+        <section className="pc-trash-empty">
+          <span>
+            <Trash2 />
+          </span>
+          <h2>La papelera está vacía</h2>
+          <p>
+            Los chats de presupuesto que elimines aparecerán acá durante siete
+            días.
+          </p>
+          <Button variant="outline" onClick={back}>
+            Volver a presupuestos
+          </Button>
+        </section>
       )}
-      <section className="pc-card">
-        <div className="pc-profile-head">
-          <span>LM</span>
-          <div>
-            <h2>Lucía Martínez</h2>
-            <p>Líder de implementación</p>
-          </div>
-        </div>
-        <div className="pc-form-grid">
-          <label>
-            Nombre
-            <Input defaultValue="Lucía Martínez" />
-          </label>
-          <label>
-            Correo
-            <Input defaultValue="lucia.martinez@finnegans.com" />
-          </label>
-          <label>
-            Área
-            <Input defaultValue="Implementaciones" />
-          </label>
-          <label>
-            Rol
-            <Input value="Líder y presupuestadora" disabled />
-          </label>
-        </div>
-        <footer>
-          <Button onClick={() => setSaved(true)}>Guardar cambios</Button>
-        </footer>
-      </section>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => !open && setSelected(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restaurar presupuesto</DialogTitle>
+            <DialogDescription>
+              “Presupuesto · {selected?.budget.client}” volverá a aparecer junto
+              a tus conversaciones activas.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelected(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (selected) restore(selected);
+                setSelected(null);
+              }}
+            >
+              <RotateCcw />
+              Restaurar presupuesto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 export default function FunctionalPrecoApp() {
-  const [logged, setLogged] = useState(false);
   const [screen, setScreen] = useState<Screen>('home');
+  const [dark, setDark] = useState(false);
   const [budgets, setBudgets] = useState(initial);
+  const [deleted, setDeleted] = useState<DeletedBudget[]>([]);
   const [draft, setDraft] = useState<Budget>(blank());
   const [active, setActive] = useState<Budget>(initial[0]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState<Budget | null>(null);
+  useEffect(() => {
+    setDark(window.localStorage.getItem('preco-theme') === 'dark');
+  }, []);
   const go = (s: Screen) => {
     if (s === 'wizard') setDraft(blank());
     setScreen(s);
@@ -1622,19 +1700,35 @@ export default function FunctionalPrecoApp() {
     setConfirmOpen(false);
     setScreen('project');
   };
-  if (!logged)
-    return (
-      <Login
-        enter={() => {
-          setLogged(true);
-          setScreen('home');
-        }}
-      />
-    );
+  const remove = (budget: Budget) => {
+    setBudgets((all) => all.filter((item) => item.id !== budget.id));
+    setDeleted((all) => [{ budget, deletedAt: Date.now() }, ...all]);
+    setDeleteCandidate(null);
+  };
+  const restore = (item: DeletedBudget) => {
+    setDeleted((all) => all.filter((x) => x.budget.id !== item.budget.id));
+    setBudgets((all) => [item.budget, ...all]);
+  };
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    window.localStorage.setItem('preco-theme', next ? 'dark' : 'light');
+  };
   return (
-    <Shell screen={screen} go={go} logout={() => setLogged(false)}>
+    <Shell
+      screen={screen}
+      go={go}
+      trashCount={deleted.length}
+      dark={dark}
+      toggleTheme={toggleTheme}
+    >
       {screen === 'home' && (
-        <Home budgets={budgets} open={open} create={() => go('wizard')} />
+        <Home
+          budgets={budgets}
+          open={open}
+          create={() => go('wizard')}
+          remove={setDeleteCandidate}
+        />
       )}{' '}
       {screen === 'wizard' && (
         <Wizard
@@ -1649,7 +1743,7 @@ export default function FunctionalPrecoApp() {
           budget={active}
           update={update}
           calculate={() => setScreen('result')}
-          back={() => setScreen('project')}
+          back={() => setScreen(active.estimate ? 'project' : 'home')}
         />
       )}{' '}
       {screen === 'result' && (
@@ -1666,7 +1760,39 @@ export default function FunctionalPrecoApp() {
           goHome={() => setScreen('home')}
         />
       )}{' '}
-      {screen === 'profile' && <Profile />}
+      {screen === 'trash' && (
+        <Trash
+          deleted={deleted}
+          restore={restore}
+          back={() => setScreen('home')}
+        />
+      )}
+      <Dialog
+        open={!!deleteCandidate}
+        onOpenChange={(open) => !open && setDeleteCandidate(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar presupuesto a la papelera</DialogTitle>
+            <DialogDescription>
+              “Presupuesto · {deleteCandidate?.client}” dejará de aparecer en la
+              lista principal. Podrás restaurarlo durante siete días.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteCandidate(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="pc-danger-button"
+              onClick={() => deleteCandidate && remove(deleteCandidate)}
+            >
+              <Trash2 />
+              Enviar a papelera
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
