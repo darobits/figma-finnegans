@@ -10,7 +10,8 @@ const roboto = Roboto({
 
 export const metadata: Metadata = {
   title: 'PRECO – Presupuesto Companion',
-  description: 'Agente interno de IA para estimar horas de implementación.',
+  description:
+    'Asistente interno para crear y ajustar presupuestos de implementación.',
 };
 
 export default function RootLayout({
@@ -20,9 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${roboto.variable} antialiased`}>
-        {children}
-      </body>
+      <body className={`${roboto.variable} antialiased`}>{children}</body>
     </html>
   );
 }
